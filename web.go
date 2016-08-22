@@ -12,19 +12,16 @@ var knownPaths []string
 
 func main() {
 
-	dir, err := os.Getwd()
+	currDir, err := os.Getwd()
 	if err != nil {
 		log.Panicf("Getwd: %s", err)
 	}
 
+	http.HandleFunc("/", rootHandler) // default handler
+
+	registerStatic("/www/", currDir)
+
 	addr := ":8080"
-
-	http.HandleFunc("/", rootHandler)
-
-	path := "/www/"
-	http.Handle(path, staticHandler{http.StripPrefix(path, http.FileServer(http.Dir(dir)))})
-	knownPaths = append(knownPaths, path)
-	log.Printf("serving static directory %s as www path %s", dir, path)
 
 	log.Printf("serving on port TCP %s", addr)
 
@@ -35,6 +32,12 @@ func main() {
 
 type staticHandler struct {
 	innerHandler http.Handler
+}
+
+func registerStatic(path, dir string) {
+	http.Handle(path, staticHandler{http.StripPrefix(path, http.FileServer(http.Dir(dir)))})
+	knownPaths = append(knownPaths, path)
+	log.Printf("registering static directory %s as www path %s", dir, path)
 }
 
 func (handler staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
