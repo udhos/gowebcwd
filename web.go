@@ -41,17 +41,22 @@ func registerStatic(path, dir string) {
 }
 
 func (handler staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("staticHandler.ServeHTTP url=%s", r.URL.Path)
+	log.Printf("staticHandler.ServeHTTP url=%s from=%s", r.URL.Path, r.RemoteAddr)
 	handler.innerHandler.ServeHTTP(w, r)
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	msg := fmt.Sprintf("root: URL=%s", r.URL.Path)
+	msg := fmt.Sprintf("rootHandler: url=%s from=%s", r.URL.Path, r.RemoteAddr)
 	log.Printf(msg)
 
 	var paths string
 	for _, p := range knownPaths {
 		paths += fmt.Sprintf("<a href=\"%s\">%s</a> <br>", p, p)
+	}
+
+	var errMsg string
+	if r.URL.Path != "/" {
+		errMsg = fmt.Sprintf("<h2>Path not found!</h2>Path not found: [%s]", r.URL.Path)
 	}
 
 	rootStr :=
@@ -62,13 +67,17 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
     <title>gowebcwd root page</title>
   </head>
   <body>
-    <h1>All known paths:</h1>
+    <h1>gowebcwd root page</h1>
+    <h2>Welcome!</h2>
+	Your address is: %s
+    %s
+    <h2>All known paths:</h2>
     %s
   </body>
 </html>
 `
 
-	rootPage := fmt.Sprintf(rootStr, paths)
+	rootPage := fmt.Sprintf(rootStr, r.RemoteAddr, errMsg, paths)
 
 	io.WriteString(w, rootPage)
 }
